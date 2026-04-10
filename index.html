@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LCS Pro Visualizer</title>
+    <style>
+        :root {
+            /* Deep Space Palette */
+            --bg: #020617;
+            --card-bg: #0f172a;
+            --grid-border: #1e293b;
+            --text-main: #f1f5f9;
+            
+            /* Action Colors */
+            --primary: #38bdf8;       /* Sky Blue */
+            --accent: #fbbf24;        /* Amber */
+            --match: #4ade80;         /* Neon Green */
+            --backtrack: #f472b6;     /* Hot Pink */
+            --logic-arrow: rgba(56, 189, 248, 0.5); /* Cyan Translucent */
+            --path-arrow: #f472b6;    /* Solid Pink */
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            margin: 0;
+        }
+
+        h2 {
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
+
+        .controls {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        input {
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--grid-border);
+            background: #1e293b;
+            color: white;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        input:focus { border-color: var(--primary); }
+
+        button {
+            padding: 0.6rem 1.5rem;
+            background: var(--primary);
+            color: #020617;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        button:hover { transform: translateY(-1px); box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); }
+        button:disabled { opacity: 0.3; filter: grayscale(1); }
+
+        #visualization-zone {
+            position: relative;
+            margin-top: 2rem;
+            background: #020617;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        #grid-container {
+            display: grid;
+            gap: 6px;
+            position: relative;
+            z-index: 10;
+        }
+
+        #arrow-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .cell {
+            width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--grid-border);
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .cell.header { 
+            background: #1e293b; 
+            color: var(--accent); 
+            border-color: #334155;
+        }
+
+        .cell.active { 
+            background: var(--primary); 
+            color: var(--bg); 
+            transform: scale(1.15);
+            box-shadow: 0 0 20px var(--primary);
+            z-index: 40;
+        }
+
+        .cell.match { 
+            color: var(--match); 
+            text-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+        }
+
+        .cell.visited { 
+            border-color: #334155;
+            color: #64748b; 
+        }
+
+        .cell.path-highlight {
+            background: var(--backtrack) !important;
+            color: white !important;
+            box-shadow: 0 0 15px var(--backtrack);
+            border: none;
+        }
+
+        #result {
+            margin-top: 2.5rem;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--match);
+            text-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <h2>LCS ARCHITECT <small style="font-size: 0.5em; opacity: 0.7;">PRO</small></h2>
+
+    <div class="controls">
+        <input type="text" id="s1" placeholder="String A" value="ALGORITHM">
+        <input type="text" id="s2" placeholder="String B" value="LOGARITHM">
+        <button onclick="startSimulation()" id="startBtn">Compute Path</button>
+    </div>
+
+    <div id="visualization-zone">
+        <canvas id="arrow-canvas"></canvas>
+        <div id="grid-container"></div>
+    </div>
+    
+    <div id="result"></div>
+
+    <script>
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const canvas = document.getElementById('arrow-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function drawArrow(fromEl, toEl, color, lineWidth = 2, isBacktrack = false) {
+            const fromRect = fromEl.getBoundingClientRect();
+            const toRect = toEl.getBoundingClientRect();
+            const zoneRect = document.getElementById('visualization-zone').getBoundingClientRect();
+
+            const startX = (fromRect.left + fromRect.width / 2) - zoneRect.left;
+            const startY = (fromRect.top + fromRect.height / 2) - zoneRect.top;
+            const endX = (toRect.left + toRect.width / 2) - zoneRect.left;
+            const endY = (toRect.top + toRect.height / 2) - zoneRect.top;
+
+            const angle = Math.atan2(endY - startY, endX - startX);
+            const shorten = 20;
+            const fx = endX - shorten * Math.cos(angle);
+            const fy = endY - shorten * Math.sin(angle);
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(fx, fy);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.lineCap = "round";
+            if (isBacktrack) {
+                ctx.setLineDash([8, 4]);
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = color;
+            } else {
+                ctx.setLineDash([]);
+                ctx.shadowBlur = 0;
+            }
+            ctx.stroke();
+
+            // Arrow Head
+            const hl = isBacktrack ? 12 : 8;
+            ctx.beginPath();
+            ctx.moveTo(fx, fy);
+            ctx.lineTo(fx - hl * Math.cos(angle - Math.PI / 6), fy - hl * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(fx - hl * Math.cos(angle + Math.PI / 6), fy - hl * Math.sin(angle + Math.PI / 6));
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        async function startSimulation() {
+            const s1 = document.getElementById('s1').value.toUpperCase();
+            const s2 = document.getElementById('s2').value.toUpperCase();
+            const container = document.getElementById('grid-container');
+            const resultDiv = document.getElementById('result');
+            const btn = document.getElementById('startBtn');
+
+            btn.disabled = true;
+            resultDiv.innerText = "";
+            container.innerHTML = "";
+            
+            const m = s1.length, n = s2.length;
+            const cellCountX = n + 2, cellCountY = m + 2;
+            const cellSize = 52, gap = 6;
+            
+            canvas.width = cellCountX * cellSize + (cellCountX - 1) * gap + 20;
+            canvas.height = cellCountY * cellSize + (cellCountY - 1) * gap + 20;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            container.style.gridTemplateColumns = `repeat(${cellCountX}, ${cellSize}px)`;
+            
+            let dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
+            let cellElements = Array(m + 1).fill().map(() => Array(n + 1).fill(null));
+
+            // Setup UI Grid
+            for (let i = -1; i <= m; i++) {
+                for (let j = -1; j <= n; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    if (i === -1 && j === -1) cell.innerText = "";
+                    else if (i === -1) cell.innerText = j === 0 ? "Ø" : s2[j-1], cell.classList.add('header');
+                    else if (j === -1) cell.innerText = i === 0 ? "Ø" : s1[i-1], cell.classList.add('header');
+                    else {
+                        cell.innerText = "0";
+                        cellElements[i][j] = cell;
+                    }
+                    container.appendChild(cell);
+                }
+            }
+
+            const arrowColor = "rgba(56, 189, 248, 0.4)";
+
+            // Build DP Table
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    const current = cellElements[i][j];
+                    current.classList.add('active');
+                    await sleep(100);
+
+                    if (s1[i-1] === s2[j-1]) {
+                        dp[i][j] = dp[i-1][j-1] + 1;
+                        drawArrow(current, cellElements[i-1][j-1], "rgba(74, 222, 128, 0.6)");
+                        current.classList.add('match');
+                    } else {
+                        dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+                        if (dp[i-1][j] >= dp[i][j-1]) drawArrow(current, cellElements[i-1][j], arrowColor);
+                        else drawArrow(current, cellElements[i][j-1], arrowColor);
+                    }
+
+                    current.innerText = dp[i][j];
+                    await sleep(50);
+                    current.classList.remove('active');
+                    current.classList.add('visited');
+                }
+            }
+
+            // Backtrack Sequence
+            await sleep(600);
+            let res = "";
+            let r = m, c = n;
+            const pathColor = "#f472b6";
+            
+            while (r > 0 && c > 0) {
+                const current = cellElements[r][c];
+                if (s1[r-1] === s2[c-1]) {
+                    current.classList.add('path-highlight');
+                    res = s1[r-1] + res;
+                    drawArrow(current, cellElements[r-1][c-1], pathColor, 4, true);
+                    await sleep(300);
+                    r--; c--;
+                } else {
+                    if (dp[r-1][c] >= dp[r][c-1]) {
+                        drawArrow(current, cellElements[r-1][c], pathColor, 2, true);
+                        r--;
+                    } else {
+                        drawArrow(current, cellElements[r][c-1], pathColor, 2, true);
+                        c--;
+                    }
+                    await sleep(150);
+                }
+            }
+
+            resultDiv.innerText = "LCS: " + (res || "None");
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>
