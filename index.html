@@ -1,318 +1,1344 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LCS Pro Visualizer</title>
-    <style>
-        :root {
-            /* Deep Space Palette */
-            --bg: #020617;
-            --card-bg: #0f172a;
-            --grid-border: #1e293b;
-            --text-main: #f1f5f9;
-            
-            /* Action Colors */
-            --primary: #38bdf8;       /* Sky Blue */
-            --accent: #fbbf24;        /* Amber */
-            --match: #4ade80;         /* Neon Green */
-            --backtrack: #f472b6;     /* Hot Pink */
-            --logic-arrow: rgba(56, 189, 248, 0.5); /* Cyan Translucent */
-            --path-arrow: #f472b6;    /* Solid Pink */
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FWMDS — Food Waste Management & Distribution System</title>
+<style>
+  :root {
+    --bg: #0d0f10;
+    --surface: #131618;
+    --surface2: #1a1e21;
+    --border: #252b2f;
+    --border2: #2f363c;
+    --text: #e8ecef;
+    --muted: #6b7680;
+    --accent: #00d084;
+    --accent2: #00a86b;
+    --warn: #f5a623;
+    --danger: #ff4d4d;
+    --info: #3a9bdc;
+    --purple: #9b59f5;
+    --mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+    --head: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    display: flex;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 2rem;
-            margin: 0;
-        }
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: 220px;
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    font-family: var(--head);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    margin-bottom: 6px;
+  }
+  .logo-title {
+    font-family: var(--head);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .logo-sub {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-top: 2px;
+  }
+  .nav-section {
+    padding: 16px 12px 8px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    margin: 2px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--body);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--muted);
+    transition: all 0.15s ease;
+    text-decoration: none;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active {
+    background: rgba(0, 208, 132, 0.1);
+    color: var(--accent);
+    border-color: rgba(0, 208, 132, 0.2);
+  }
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+  .sidebar-bottom {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .user-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .user-avatar {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #000;
+  }
+  .user-info { flex: 1; }
+  .user-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .user-role { font-size: 10px; color: var(--muted); font-family: var(--mono); }
 
-        h2 {
-            font-weight: 800;
-            letter-spacing: -0.025em;
-            background: linear-gradient(to right, #38bdf8, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 2rem;
-        }
+  /* ─── MAIN ─── */
+  .main {
+    margin-left: 220px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  .topbar {
+    height: 56px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar-title {
+    font-family: var(--head);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .topbar-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 12px; }
+  .status-pill {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(0,208,132,0.08);
+    border: 1px solid rgba(0,208,132,0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+  }
+  .pulse { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1; transform:scale(1);} 50%{opacity:.4; transform:scale(.8);} }
 
-        .controls {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid #334155;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-            display: flex;
-            gap: 10px;
-            z-index: 100;
-        }
+  /* ─── PAGES ─── */
+  .page { display: none; padding: 28px; animation: fadeIn .25s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .page-header { margin-bottom: 24px; }
+  .page-header h1 {
+    font-family: var(--head);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .page-header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
 
-        input {
-            padding: 0.6rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--grid-border);
-            background: #1e293b;
-            color: white;
-            outline: none;
-            transition: border 0.3s;
-        }
+  /* ─── STAT CARDS ─── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--border2); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .stat-card.green::before { background: var(--accent); }
+  .stat-card.blue::before { background: var(--info); }
+  .stat-card.orange::before { background: var(--warn); }
+  .stat-card.red::before { background: var(--danger); }
+  .stat-label { font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .stat-value { font-family: var(--head); font-size: 30px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+  .stat-card.green .stat-value { color: var(--accent); }
+  .stat-card.blue .stat-value { color: var(--info); }
+  .stat-card.orange .stat-value { color: var(--warn); }
+  .stat-card.red .stat-value { color: var(--danger); }
+  .stat-sub { font-size: 11px; color: var(--muted); }
+  .stat-icon { position: absolute; top: 18px; right: 18px; font-size: 22px; opacity: .15; }
 
-        input:focus { border-color: var(--primary); }
+  /* ─── GRID LAYOUTS ─── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 
-        button {
-            padding: 0.6rem 1.5rem;
-            background: var(--primary);
-            color: #020617;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 700;
-            text-transform: uppercase;
-            transition: all 0.2s;
-        }
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-head h3 { font-family: var(--head); font-weight: 700; font-size: 14px; }
+  .card-body { padding: 20px; }
 
-        button:hover { transform: translateY(-1px); box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); }
-        button:disabled { opacity: 0.3; filter: grayscale(1); }
+  /* ─── TABLE ─── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(255,255,255,0.02); }
 
-        #visualization-zone {
-            position: relative;
-            margin-top: 2rem;
-            background: #020617;
-            padding: 10px;
-            border-radius: 8px;
-        }
+  /* ─── BADGES ─── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .5px;
+  }
+  .badge-green { background: rgba(0,208,132,0.12); color: var(--accent); border: 1px solid rgba(0,208,132,0.2); }
+  .badge-red { background: rgba(255,77,77,0.12); color: var(--danger); border: 1px solid rgba(255,77,77,0.2); }
+  .badge-orange { background: rgba(245,166,35,0.12); color: var(--warn); border: 1px solid rgba(245,166,35,0.2); }
+  .badge-blue { background: rgba(58,155,220,0.12); color: var(--info); border: 1px solid rgba(58,155,220,0.2); }
+  .badge-purple { background: rgba(155,89,245,0.12); color: var(--purple); border: 1px solid rgba(155,89,245,0.2); }
+  .badge-muted { background: rgba(107,118,128,0.12); color: var(--muted); border: 1px solid rgba(107,118,128,0.2); }
 
-        #grid-container {
-            display: grid;
-            gap: 6px;
-            position: relative;
-            z-index: 10;
-        }
+  /* ─── FORM ELEMENTS ─── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label { font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 13px;
+    padding: 9px 12px;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,208,132,0.08);
+  }
+  input::placeholder { color: var(--muted); }
+  select option { background: var(--surface2); }
 
-        #arrow-canvas {
-            position: absolute;
-            top: 0; left: 0;
-            pointer-events: none;
-            z-index: 20;
-        }
+  /* ─── BUTTONS ─── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-family: var(--body);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s ease;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  .btn-primary:hover { background: #00b872; }
+  .btn-outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+  .btn-outline:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(255,77,77,0.15); color: var(--danger); border: 1px solid rgba(255,77,77,0.2); }
+  .btn-sm { padding: 5px 12px; font-size: 11.5px; }
 
-        .cell {
-            width: 52px;
-            height: 52px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid var(--grid-border);
-            border-radius: 4px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.1rem;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+  /* ─── ALERTS ─── */
+  .alert {
+    padding: 12px 16px;
+    border-radius: 7px;
+    font-size: 13px;
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .alert-success { background: rgba(0,208,132,0.1); color: var(--accent); border: 1px solid rgba(0,208,132,0.2); }
+  .alert-error { background: rgba(255,77,77,0.1); color: var(--danger); border: 1px solid rgba(255,77,77,0.2); }
 
-        .cell.header { 
-            background: #1e293b; 
-            color: var(--accent); 
-            border-color: #334155;
-        }
+  /* ─── MINI BAR CHART ─── */
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { width: 140px; font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 1s cubic-bezier(.4,0,.2,1); }
+  .bar-fill.blue { background: var(--info); }
+  .bar-fill.orange { background: var(--warn); }
+  .bar-fill.red { background: var(--danger); }
+  .bar-val { width: 50px; font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: right; }
 
-        .cell.active { 
-            background: var(--primary); 
-            color: var(--bg); 
-            transform: scale(1.15);
-            box-shadow: 0 0 20px var(--primary);
-            z-index: 40;
-        }
+  /* ─── DONUT ─── */
+  .donut-wrap { display: flex; align-items: center; gap: 24px; }
+  .donut-legend { display: flex; flex-direction: column; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
-        .cell.match { 
-            color: var(--match); 
-            text-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
-        }
+  /* ─── ACTIVITY FEED ─── */
+  .activity-feed { display: flex; flex-direction: column; gap: 0; }
+  .activity-item {
+    display: flex;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .act-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+  .act-content { flex: 1; }
+  .act-title { font-size: 12.5px; color: var(--text); line-height: 1.4; }
+  .act-time { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 2px; }
 
-        .cell.visited { 
-            border-color: #334155;
-            color: #64748b; 
-        }
+  /* ─── SEARCH ─── */
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .search-bar input { max-width: 280px; }
+  .tag-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: var(--mono);
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    background: transparent;
+    transition: all .15s;
+  }
+  .tag.active, .tag:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,208,132,0.07); }
 
-        .cell.path-highlight {
-            background: var(--backtrack) !important;
-            color: white !important;
-            box-shadow: 0 0 15px var(--backtrack);
-            border: none;
-        }
+  /* ─── PROGRESS ─── */
+  .progress-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; border-radius: 2px; background: var(--accent); }
 
-        #result {
-            margin-top: 2.5rem;
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--match);
-            text-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
-        }
-    </style>
+  /* ─── DIVIDER ─── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* ─── SCROLL ─── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ─── LOGIN PAGE ─── */
+  .login-page {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-page.active { display: flex; }
+  .login-grid { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; width: 100%; }
+  .login-left {
+    background: linear-gradient(135deg, #0a1a12 0%, #0d1f14 50%, #091610 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .login-left::before {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,208,132,0.08) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .login-brand { position: relative; z-index: 1; }
+  .login-brand .logo-badge { font-size: 12px; padding: 6px 12px; margin-bottom: 16px; }
+  .login-headline {
+    font-family: var(--head);
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .login-desc { color: var(--muted); font-size: 14px; line-height: 1.7; max-width: 340px; }
+  .login-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 40px; }
+  .login-stat {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .login-stat-val { font-family: var(--head); font-size: 22px; font-weight: 800; color: var(--accent); }
+  .login-stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .login-right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+    background: var(--surface);
+  }
+  .login-form-wrap { width: 100%; max-width: 360px; }
+  .login-form-wrap h2 { font-family: var(--head); font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  .login-form-wrap p { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+  .login-fields { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 500px;
+    max-width: 95vw;
+    animation: fadeIn .2s ease;
+  }
+  .modal-head {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-head h3 { font-family: var(--head); font-size: 15px; font-weight: 700; }
+  .modal-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 0 4px; }
+  .modal-body { padding: 24px; }
+  .modal-foot { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* ─── CHIP ─── */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  /* region dots */
+  .region-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  /* ─── RESPONSIVE TWEAKS ─── */
+  @media (max-width: 900px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
+  }
+</style>
 </head>
 <body>
 
-    <h2>LCS ARCHITECT <small style="font-size: 0.5em; opacity: 0.7;">PRO</small></h2>
+<!-- ═══════════════ LOGIN PAGE ═══════════════ -->
+<div class="login-page active" id="loginPage">
+  <div class="login-grid">
+    <div class="login-left">
+      <div class="login-brand">
+        <span class="logo-badge">FWMDS</span>
+        <div class="login-headline">Reducing Waste.<br>Feeding India.</div>
+        <p class="login-desc">A centralized platform to track food surplus, coordinate NGO distribution, and eliminate food waste across 20 regions.</p>
+        <div class="login-stats">
+          <div class="login-stat"><div class="login-stat-val">19</div><div class="login-stat-lbl">Tracked Entities</div></div>
+          <div class="login-stat"><div class="login-stat-val">20</div><div class="login-stat-lbl">Regions Covered</div></div>
+          <div class="login-stat"><div class="login-stat-val">4NF</div><div class="login-stat-lbl">Normalized Schema</div></div>
+          <div class="login-stat"><div class="login-stat-val">ACID</div><div class="login-stat-lbl">Transactions</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="login-right">
+      <div class="login-form-wrap">
+        <h2>Welcome back</h2>
+        <p>Sign in to access the Food Waste Management System</p>
+        <div class="login-fields">
+          <div class="field">
+            <label>Username</label>
+            <input type="text" id="loginUser" placeholder="e.g. admin_ravi" value="admin_ravi">
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="loginPass" placeholder="Enter password" value="••••••••">
+          </div>
+          <div class="field">
+            <label>Role</label>
+            <select id="loginRole">
+              <option>Admin</option>
+              <option>Operator</option>
+              <option>Auditor</option>
+              <option>NGO_User</option>
+              <option>Government</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="doLogin()">Sign In →</button>
+        <div id="loginMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-    <div class="controls">
-        <input type="text" id="s1" placeholder="String A" value="ALGORITHM">
-        <input type="text" id="s2" placeholder="String B" value="LOGARITHM">
-        <button onclick="startSimulation()" id="startBtn">Compute Path</button>
+<!-- ═══════════════ APP SHELL ═══════════════ -->
+<div id="appShell" style="display:none; width:100%;">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-badge">FWMDS</div>
+    <div class="logo-title">Food Waste Mgmt<br>& Distribution</div>
+    <div class="logo-sub">MySQL · Node.js · v1.0</div>
+  </div>
+
+  <div class="nav-section">Main</div>
+  <a class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+    <span class="nav-icon">⬡</span> Dashboard
+  </a>
+  <a class="nav-item" id="nav-inventory" onclick="showPage('inventory')">
+    <span class="nav-icon">⊞</span> Inventory
+  </a>
+  <a class="nav-item" id="nav-demand" onclick="showPage('demand')">
+    <span class="nav-icon">◈</span> Demands
+  </a>
+  <a class="nav-item" id="nav-delivery" onclick="showPage('delivery')">
+    <span class="nav-icon">◎</span> Deliveries
+  </a>
+
+  <div class="nav-section">Management</div>
+  <a class="nav-item" id="nav-food" onclick="showPage('food')">
+    <span class="nav-icon">⊕</span> Food Items
+  </a>
+  <a class="nav-item" id="nav-wastage" onclick="showPage('wastage')">
+    <span class="nav-icon">⚠</span> Wastage Records
+  </a>
+  <a class="nav-item" id="nav-quality" onclick="showPage('quality')">
+    <span class="nav-icon">✓</span> Quality Checks
+  </a>
+  <a class="nav-item" id="nav-ngo" onclick="showPage('ngo')">
+    <span class="nav-icon">◇</span> NGOs & Schemes
+  </a>
+
+  <div class="nav-section">System</div>
+  <a class="nav-item" id="nav-logs" onclick="showPage('logs')">
+    <span class="nav-icon">≡</span> System Logs
+  </a>
+
+  <div class="sidebar-bottom">
+    <div class="user-chip">
+      <div class="user-avatar" id="sidebarAvatar">RA</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebarUser">admin_ravi</div>
+        <div class="user-role" id="sidebarRole">Admin</div>
+      </div>
+      <button onclick="doLogout()" title="Logout" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">⏏</button>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Dashboard Overview</div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="topbar-meta" id="topbarDate"></div>
+      <div class="status-pill"><div class="pulse"></div>DB Online</div>
+    </div>
+  </div>
+
+  <!-- ─── DASHBOARD ─── -->
+  <div id="page-dashboard" class="page active">
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <p>Real-time overview of food distribution operations</p>
     </div>
 
-    <div id="visualization-zone">
-        <canvas id="arrow-canvas"></canvas>
-        <div id="grid-container"></div>
+    <div class="stats-grid">
+      <div class="stat-card green">
+        <div class="stat-icon">⊞</div>
+        <div class="stat-label">Available Inventory</div>
+        <div class="stat-value" id="d-inv">16,450</div>
+        <div class="stat-sub">kilograms in stock</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon">◈</div>
+        <div class="stat-label">Pending Demands</div>
+        <div class="stat-value" id="d-dem">7</div>
+        <div class="stat-sub">awaiting approval</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-icon">◎</div>
+        <div class="stat-label">Active Deliveries</div>
+        <div class="stat-value" id="d-del">12</div>
+        <div class="stat-sub">scheduled + dispatched</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">⚠</div>
+        <div class="stat-label">Total Wastage</div>
+        <div class="stat-value" id="d-wst">1,015</div>
+        <div class="stat-sub">kg recorded loss</div>
+      </div>
     </div>
-    
-    <div id="result"></div>
 
-    <script>
-        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-        const canvas = document.getElementById('arrow-canvas');
-        const ctx = canvas.getContext('2d');
+    <div class="grid-2" style="margin-bottom:16px;">
+      <!-- Wastage by warehouse -->
+      <div class="card">
+        <div class="card-head">
+          <h3>Wastage by Warehouse</h3>
+          <span class="badge badge-muted">kg</span>
+        </div>
+        <div class="card-body">
+          <div class="bar-chart">
+            <div class="bar-row"><span class="bar-label">Coimbatore Grain</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">300 kg</span></div>
+            <div class="bar-row"><span class="bar-label">Chennai Central</span><div class="bar-track"><div class="bar-fill" style="width:98%"></div></div><span class="bar-val">295 kg</span></div>
+            <div class="bar-row"><span class="bar-label">Delhi Distribution</span><div class="bar-track"><div class="bar-fill blue" style="width:43%"></div></div><span class="bar-val">130 kg</span></div>
+            <div class="bar-row"><span class="bar-label">Mumbai Metro</span><div class="bar-track"><div class="bar-fill orange" style="width:27%"></div></div><span class="bar-val">80 kg</span></div>
+            <div class="bar-row"><span class="bar-label">Hyderabad Grain</span><div class="bar-track"><div class="bar-fill orange" style="width:27%"></div></div><span class="bar-val">80 kg</span></div>
+          </div>
+        </div>
+      </div>
 
-        function drawArrow(fromEl, toEl, color, lineWidth = 2, isBacktrack = false) {
-            const fromRect = fromEl.getBoundingClientRect();
-            const toRect = toEl.getBoundingClientRect();
-            const zoneRect = document.getElementById('visualization-zone').getBoundingClientRect();
+      <!-- Demand Status -->
+      <div class="card">
+        <div class="card-head">
+          <h3>Demand Status Distribution</h3>
+          <span class="badge badge-blue">20 total</span>
+        </div>
+        <div class="card-body">
+          <div class="donut-wrap">
+            <svg width="110" height="110" viewBox="0 0 110 110">
+              <circle cx="55" cy="55" r="40" fill="none" stroke="var(--border)" stroke-width="14"/>
+              <circle cx="55" cy="55" r="40" fill="none" stroke="var(--accent)" stroke-width="14"
+                stroke-dasharray="138 113" stroke-dashoffset="35" stroke-linecap="round"/>
+              <circle cx="55" cy="55" r="40" fill="none" stroke="var(--warn)" stroke-width="14"
+                stroke-dasharray="88 163" stroke-dashoffset="-103" stroke-linecap="round"/>
+              <circle cx="55" cy="55" r="40" fill="none" stroke="var(--info)" stroke-width="14"
+                stroke-dasharray="13 238" stroke-dashoffset="-191" stroke-linecap="round"/>
+              <circle cx="55" cy="55" r="40" fill="none" stroke="var(--danger)" stroke-width="14"
+                stroke-dasharray="13 238" stroke-dashoffset="-204" stroke-linecap="round"/>
+              <text x="55" y="59" text-anchor="middle" fill="var(--text)" font-size="16" font-family="Syne" font-weight="800">20</text>
+            </svg>
+            <div class="donut-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Approved — 11 (55%)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--warn)"></div>Pending — 7 (35%)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--info)"></div>Fulfilled — 1 (5%)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div>Rejected — 1 (5%)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-            const startX = (fromRect.left + fromRect.width / 2) - zoneRect.left;
-            const startY = (fromRect.top + fromRect.height / 2) - zoneRect.top;
-            const endX = (toRect.left + toRect.width / 2) - zoneRect.left;
-            const endY = (toRect.top + toRect.height / 2) - zoneRect.top;
+    <div class="grid-2">
+      <!-- Critical Items -->
+      <div class="card">
+        <div class="card-head">
+          <h3>Critical / Expiring Items</h3>
+          <span class="badge badge-red">⚠ Urgent</span>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <table>
+            <thead><tr><th>Item</th><th>Warehouse</th><th>Qty</th><th>Expiry</th></tr></thead>
+            <tbody>
+              <tr><td>Rohu Fish</td><td>Chennai Central</td><td>150 kg</td><td><span class="badge badge-red">2024-06-08</span></td></tr>
+              <tr><td>Tomatoes</td><td>Chennai Central</td><td>800 kg</td><td><span class="badge badge-red">2024-06-08</span></td></tr>
+              <tr><td>Mixed Veg Meal</td><td>Mumbai Metro</td><td>300 kg</td><td><span class="badge badge-red">2024-06-08</span></td></tr>
+              <tr><td>Chicken Breast</td><td>Mumbai Metro</td><td>200 kg</td><td><span class="badge badge-orange">2024-06-08</span></td></tr>
+              <tr><td>Gulab Jamun</td><td>Madurai Cold</td><td>400 kg</td><td><span class="badge badge-orange">2024-06-12</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-            const angle = Math.atan2(endY - startY, endX - startX);
-            const shorten = 20;
-            const fx = endX - shorten * Math.cos(angle);
-            const fy = endY - shorten * Math.sin(angle);
+      <!-- Recent Activity -->
+      <div class="card">
+        <div class="card-head">
+          <h3>Recent System Activity</h3>
+          <span class="badge badge-muted">last 20 actions</span>
+        </div>
+        <div class="card-body">
+          <div class="activity-feed">
+            <div class="activity-item"><div class="act-dot" style="background:var(--accent)"></div><div class="act-content"><div class="act-title">admin_ravi inserted batch into <strong>Inventory</strong></div><div class="act-time">2024-06-10 08:05 · 192.168.1.1</div></div></div>
+            <div class="activity-item"><div class="act-dot" style="background:var(--info)"></div><div class="act-content"><div class="act-title">operator_sita updated <strong>Demand_Details</strong></div><div class="act-time">2024-06-10 09:10 · 192.168.1.2</div></div></div>
+            <div class="activity-item"><div class="act-dot" style="background:var(--warn)"></div><div class="act-content"><div class="act-title">admin_ravi attempted DELETE on <strong>System_Log</strong></div><div class="act-time">2024-06-10 08:45 · 192.168.1.1 · <span style="color:var(--warn)">Warning</span></div></div></div>
+            <div class="activity-item"><div class="act-dot" style="background:var(--accent)"></div><div class="act-content"><div class="act-title">operator_ramesh recorded <strong>Food_Wastage_Record</strong></div><div class="act-time">2024-06-10 10:05 · 192.168.1.16</div></div></div>
+            <div class="activity-item"><div class="act-dot" style="background:var(--danger)"></div><div class="act-content"><div class="act-title">auditor_deepa SELECT on <strong>System_Log</strong> — Failed</div><div class="act-time">2024-06-06 15:05 · 192.168.1.9</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-            ctx.beginPath();
-            ctx.moveTo(startX, startY);
-            ctx.lineTo(fx, fy);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = lineWidth;
-            ctx.lineCap = "round";
-            if (isBacktrack) {
-                ctx.setLineDash([8, 4]);
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = color;
-            } else {
-                ctx.setLineDash([]);
-                ctx.shadowBlur = 0;
-            }
-            ctx.stroke();
+  <!-- ─── INVENTORY ─── -->
+  <div id="page-inventory" class="page">
+    <div class="page-header">
+      <h1>Inventory Status</h1>
+      <p>Track all food items across warehouses with expiry monitoring</p>
+    </div>
+    <div class="search-bar">
+      <input type="text" placeholder="Search item, warehouse, batch…" id="invSearch" oninput="filterTable('invTbody', this.value)">
+      <div class="tag-filter">
+        <span class="tag active" onclick="filterBadge('invTbody','',this)">All</span>
+        <span class="tag" onclick="filterBadge('invTbody','Available',this)">Available</span>
+        <span class="tag" onclick="filterBadge('invTbody','Reserved',this)">Reserved</span>
+        <span class="tag" onclick="filterBadge('invTbody','Distributed',this)">Distributed</span>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('addInventoryModal')" style="margin-left:auto;">+ Add Batch</button>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Item</th><th>Category</th><th>Warehouse</th><th>Quantity</th><th>Entry Date</th><th>Expiry</th><th>Batch</th><th>Status</th></tr></thead>
+          <tbody id="invTbody">
+            <tr><td><span class="chip">001</span></td><td>Basmati Rice</td><td>Grains & Cereals</td><td>Chennai Central</td><td>5000.00 kg</td><td>2024-01-10</td><td><span class="badge badge-green">2025-01-10</span></td><td><span class="chip">BATCH-001</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">002</span></td><td>Tomatoes</td><td>Vegetables</td><td>Chennai Central</td><td>800.00 kg</td><td>2024-06-01</td><td><span class="badge badge-red">2024-06-08</span></td><td><span class="chip">BATCH-002</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">003</span></td><td>Whole Wheat Flour</td><td>Grains & Cereals</td><td>Coimbatore Grain</td><td>3000.00 kg</td><td>2024-02-15</td><td><span class="badge badge-green">2025-02-15</span></td><td><span class="chip">BATCH-003</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">004</span></td><td>Fresh Milk</td><td>Dairy Products</td><td>Madurai Cold Store</td><td>500.00 L</td><td>2024-06-10</td><td><span class="badge badge-orange">2024-06-20</span></td><td><span class="chip">BATCH-004</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">005</span></td><td>Chicken Breast</td><td>Meat & Poultry</td><td>Mumbai Metro</td><td>200.00 kg</td><td>2024-06-05</td><td><span class="badge badge-red">2024-06-08</span></td><td><span class="chip">BATCH-005</span></td><td><span class="badge badge-orange">Reserved</span></td></tr>
+            <tr><td><span class="chip">006</span></td><td>Rohu Fish</td><td>Seafood</td><td>Kochi Sea Food</td><td>150.00 kg</td><td>2024-06-06</td><td><span class="badge badge-red">2024-06-08</span></td><td><span class="chip">BATCH-006</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">007</span></td><td>Toor Dal</td><td>Pulses & Legumes</td><td>Chennai Central</td><td>2000.00 kg</td><td>2024-03-01</td><td><span class="badge badge-green">2024-09-01</span></td><td><span class="chip">BATCH-007</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">008</span></td><td>Sunflower Oil</td><td>Edible Oils</td><td>Ahmedabad Agri</td><td>1000.00 L</td><td>2024-01-20</td><td><span class="badge badge-green">2025-01-20</span></td><td><span class="chip">BATCH-008</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">009</span></td><td>Whole Wheat Bread</td><td>Bakery Items</td><td>Mumbai Metro</td><td>500.00 pcs</td><td>2024-06-07</td><td><span class="badge badge-orange">2024-06-12</span></td><td><span class="chip">BATCH-009</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">010</span></td><td>Mixed Veg Meal</td><td>Cooked Food</td><td>Delhi Distribution</td><td>300.00 pcs</td><td>2024-06-07</td><td><span class="badge badge-red">2024-06-08</span></td><td><span class="chip">BATCH-010</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">011</span></td><td>Orange Juice</td><td>Beverages</td><td>Coimbatore Grain</td><td>1200.00 L</td><td>2024-05-01</td><td><span class="badge badge-red">2024-05-15</span></td><td><span class="chip">BATCH-011</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">012</span></td><td>Iodized Salt</td><td>Spices</td><td>Delhi Distribution</td><td>800.00 kg</td><td>2024-01-01</td><td><span class="badge badge-green">2026-01-01</span></td><td><span class="chip">BATCH-012</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">013</span></td><td>Potato Chips</td><td>Snacks</td><td>Kolkata Storage</td><td>600.00 pcs</td><td>2024-04-01</td><td><span class="badge badge-orange">2024-07-01</span></td><td><span class="chip">BATCH-013</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">014</span></td><td>Canned Chickpeas</td><td>Canned Food</td><td>Lucknow Grain</td><td>400.00 pcs</td><td>2024-03-01</td><td><span class="badge badge-green">2025-03-01</span></td><td><span class="chip">BATCH-014</span></td><td><span class="badge badge-muted">Distributed</span></td></tr>
+            <tr><td><span class="chip">015</span></td><td>Frozen Peas</td><td>Frozen Food</td><td>Delhi Distribution</td><td>300.00 kg</td><td>2024-05-20</td><td><span class="badge badge-green">2024-11-20</span></td><td><span class="chip">BATCH-015</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">016</span></td><td>Organic Bananas</td><td>Organic Produce</td><td>Kolkata Storage</td><td>700.00 kg</td><td>2024-06-01</td><td><span class="badge badge-orange">2024-06-15</span></td><td><span class="chip">BATCH-016</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">017</span></td><td>Biscuit Pack</td><td>Packaged Food</td><td>Mumbai Metro</td><td>800.00 pcs</td><td>2024-04-10</td><td><span class="badge badge-green">2024-08-10</span></td><td><span class="chip">BATCH-017</span></td><td><span class="badge badge-orange">Reserved</span></td></tr>
+            <tr><td><span class="chip">018</span></td><td>Infant Formula</td><td>Baby Food</td><td>Madurai Cold</td><td>200.00 pcs</td><td>2024-03-01</td><td><span class="badge badge-green">2025-03-01</span></td><td><span class="chip">BATCH-018</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">019</span></td><td>Protein Powder</td><td>Health Suppl.</td><td>Madurai Cold</td><td>100.00 pcs</td><td>2024-02-01</td><td><span class="badge badge-green">2025-02-01</span></td><td><span class="chip">BATCH-019</span></td><td><span class="badge badge-green">Available</span></td></tr>
+            <tr><td><span class="chip">020</span></td><td>Gulab Jamun</td><td>Traditional Sweets</td><td>Madurai Cold</td><td>400.00 pcs</td><td>2024-06-05</td><td><span class="badge badge-orange">2024-06-12</span></td><td><span class="chip">BATCH-020</span></td><td><span class="badge badge-green">Available</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-            // Arrow Head
-            const hl = isBacktrack ? 12 : 8;
-            ctx.beginPath();
-            ctx.moveTo(fx, fy);
-            ctx.lineTo(fx - hl * Math.cos(angle - Math.PI / 6), fy - hl * Math.sin(angle - Math.PI / 6));
-            ctx.lineTo(fx - hl * Math.cos(angle + Math.PI / 6), fy - hl * Math.sin(angle + Math.PI / 6));
-            ctx.fillStyle = color;
-            ctx.fill();
-        }
+  <!-- ─── DEMANDS ─── -->
+  <div id="page-demand" class="page">
+    <div class="page-header">
+      <h1>Demand Requests</h1>
+      <p>Submit and track food demand from beneficiaries</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;">
+      <!-- Table -->
+      <div class="card">
+        <div class="card-head">
+          <h3>All Demands</h3>
+          <button class="btn btn-primary btn-sm" onclick="openModal('addDemandModal')">+ New Demand</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Beneficiary</th><th>Item</th><th>Qty</th><th>Date</th><th>Required By</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><span class="chip">001</span></td><td>Ramesh Family</td><td>Basmati Rice</td><td>50 kg</td><td>2024-06-01</td><td>2024-06-10</td><td><span class="badge badge-blue">Approved</span></td></tr>
+              <tr><td><span class="chip">002</span></td><td>City Orphanage</td><td>Tomatoes</td><td>20 kg</td><td>2024-06-01</td><td>2024-06-05</td><td><span class="badge badge-blue">Approved</span></td></tr>
+              <tr><td><span class="chip">003</span></td><td>Govt School Cbe</td><td>Whole Wheat Flour</td><td>100 kg</td><td>2024-06-02</td><td>2024-06-10</td><td><span class="badge badge-orange">Pending</span></td></tr>
+              <tr><td><span class="chip">004</span></td><td>St. Mary Shelter</td><td>Toor Dal</td><td>30 kg</td><td>2024-06-02</td><td>2024-06-08</td><td><span class="badge badge-blue">Approved</span></td></tr>
+              <tr><td><span class="chip">005</span></td><td>Pune Slum Relief</td><td>Whole Wheat Bread</td><td>200 pcs</td><td>2024-06-03</td><td>2024-06-07</td><td><span class="badge badge-blue">Approved</span></td></tr>
+              <tr><td><span class="chip">006</span></td><td>Mumbai Dharavi</td><td>Fresh Milk</td><td>50 L</td><td>2024-06-03</td><td>2024-06-09</td><td><span class="badge badge-orange">Pending</span></td></tr>
+              <tr><td><span class="chip">007</span></td><td>Delhi Railway</td><td>Mixed Veg Meal</td><td>100 pcs</td><td>2024-06-04</td><td>2024-06-06</td><td><span class="badge badge-blue">Approved</span></td></tr>
+              <tr><td><span class="chip">008</span></td><td>Bengaluru Shelter</td><td>Basmati Rice</td><td>80 kg</td><td>2024-06-04</td><td>2024-06-12</td><td><span class="badge badge-green">Fulfilled</span></td></tr>
+              <tr><td><span class="chip">009</span></td><td>Hyd Old Age Home</td><td>Fresh Milk</td><td>30 L</td><td>2024-06-05</td><td>2024-06-08</td><td><span class="badge badge-blue">Approved</span></td></tr>
+              <tr><td><span class="chip">010</span></td><td>Kolkata Slum School</td><td>Tomatoes</td><td>25 kg</td><td>2024-06-05</td><td>2024-06-08</td><td><span class="badge badge-orange">Pending</span></td></tr>
+              <tr><td><span class="chip">011</span></td><td>Ahmedabad Flood</td><td>Toor Dal</td><td>40 kg</td><td>2024-06-06</td><td>2024-06-10</td><td><span class="badge badge-blue">Approved</span></td></tr>
+              <tr><td><span class="chip">012</span></td><td>Jaipur Child Home</td><td>Organic Bananas</td><td>60 kg</td><td>2024-06-06</td><td>2024-06-12</td><td><span class="badge badge-orange">Pending</span></td></tr>
+              <tr><td><span class="chip">013</span></td><td>Lucknow Widow</td><td>Whole Wheat Flour</td><td>70 kg</td><td>2024-06-07</td><td>2024-06-14</td><td><span class="badge badge-blue">Approved</span></td></tr>
+              <tr><td><span class="chip">014</span></td><td>Bhopal Tribal School</td><td>Basmati Rice</td><td>90 kg</td><td>2024-06-07</td><td>2024-06-15</td><td><span class="badge badge-orange">Pending</span></td></tr>
+              <tr><td><span class="chip">015</span></td><td>Patna Flood Shelter</td><td>Whole Wheat Bread</td><td>150 pcs</td><td>2024-06-08</td><td>2024-06-11</td><td><span class="badge badge-blue">Approved</span></td></tr>
+              <tr><td><span class="chip">016</span></td><td>BBSR Cyclone</td><td>Toor Dal</td><td>50 kg</td><td>2024-06-08</td><td>2024-06-13</td><td><span class="badge badge-orange">Pending</span></td></tr>
+              <tr><td><span class="chip">017</span></td><td>Chandigarh Refugee</td><td>Fresh Milk</td><td>40 L</td><td>2024-06-09</td><td>2024-06-13</td><td><span class="badge badge-blue">Approved</span></td></tr>
+              <tr><td><span class="chip">018</span></td><td>Kochi Fishermen</td><td>Rohu Fish</td><td>35 kg</td><td>2024-06-09</td><td>2024-06-12</td><td><span class="badge badge-blue">Approved</span></td></tr>
+              <tr><td><span class="chip">019</span></td><td>Guwahati Flood</td><td>Basmati Rice</td><td>60 kg</td><td>2024-06-10</td><td>2024-06-15</td><td><span class="badge badge-orange">Pending</span></td></tr>
+              <tr><td><span class="chip">020</span></td><td>Nagpur Street Children</td><td>Gulab Jamun</td><td>80 pcs</td><td>2024-06-10</td><td>2024-06-14</td><td><span class="badge badge-blue">Approved</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Quick form -->
+      <div class="card">
+        <div class="card-head"><h3>Quick Submit</h3></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="field"><label>Beneficiary ID</label><input type="number" id="qd-bene" placeholder="1 – 20"></div>
+            <div class="field"><label>Food Item ID</label><input type="number" id="qd-item" placeholder="1 – 20"></div>
+            <div class="field"><label>Quantity (kg / pcs)</label><input type="number" id="qd-qty" step="0.01" placeholder="e.g. 50"></div>
+            <div class="field"><label>Demand Date</label><input type="date" id="qd-date"></div>
+            <div class="field"><label>Required By</label><input type="date" id="qd-reqby"></div>
+            <div class="field"><label>Remarks</label><input type="text" id="qd-rem" placeholder="Optional notes"></div>
+            <button class="btn btn-primary" onclick="submitQuickDemand()" style="justify-content:center;">Submit Demand</button>
+            <div id="qd-msg"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        async function startSimulation() {
-            const s1 = document.getElementById('s1').value.toUpperCase();
-            const s2 = document.getElementById('s2').value.toUpperCase();
-            const container = document.getElementById('grid-container');
-            const resultDiv = document.getElementById('result');
-            const btn = document.getElementById('startBtn');
+  <!-- ─── DELIVERY ─── -->
+  <div id="page-delivery" class="page">
+    <div class="page-header">
+      <h1>Delivery Tracking</h1>
+      <p>Monitor vehicle dispatch, routes and delivery completion</p>
+    </div>
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card green"><div class="stat-label">Delivered</div><div class="stat-value" style="font-size:26px;">5</div></div>
+      <div class="stat-card blue"><div class="stat-label">Dispatched</div><div class="stat-value" style="font-size:26px;">3</div></div>
+      <div class="stat-card orange"><div class="stat-label">Scheduled</div><div class="stat-value" style="font-size:26px;">11</div></div>
+      <div class="stat-card red"><div class="stat-label">Cancelled</div><div class="stat-value" style="font-size:26px;">1</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>All Deliveries</h3><span class="badge badge-muted">20 schedules</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sch#</th><th>Beneficiary</th><th>Item</th><th>Vehicle</th><th>Driver</th><th>Dispatch</th><th>Expected</th><th>Actual</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip">001</span></td><td>Ramesh Family</td><td>Basmati Rice</td><td>TN01-AA-1001</td><td>Murugan K</td><td>2024-06-09</td><td>2024-06-10</td><td>—</td><td><span class="badge badge-blue">Dispatched</span></td></tr>
+            <tr><td><span class="chip">002</span></td><td>City Orphanage</td><td>Tomatoes</td><td>TN01-AB-2002</td><td>Selvam R</td><td>2024-06-04</td><td>2024-06-05</td><td>2024-06-05</td><td><span class="badge badge-green">Delivered</span></td></tr>
+            <tr><td><span class="chip">003</span></td><td>Govt School Cbe</td><td>Wheat Flour</td><td>TN03-AD-4004</td><td>Arumugam S</td><td>2024-06-09</td><td>2024-06-10</td><td>—</td><td><span class="badge badge-orange">Scheduled</span></td></tr>
+            <tr><td><span class="chip">004</span></td><td>Pune Slum Relief</td><td>Wheat Bread</td><td>MH01-AE-5005</td><td>Ramesh P</td><td>2024-06-06</td><td>2024-06-07</td><td>2024-06-07</td><td><span class="badge badge-green">Delivered</span></td></tr>
+            <tr><td><span class="chip">005</span></td><td>Delhi Railway</td><td>Mixed Veg Meal</td><td>DL01-AG-7007</td><td>Sunil G</td><td>2024-06-05</td><td>2024-06-06</td><td>2024-06-06</td><td><span class="badge badge-green">Delivered</span></td></tr>
+            <tr><td><span class="chip">006</span></td><td>Mumbai Dharavi</td><td>Fresh Milk</td><td>MH02-AF-6006</td><td>Pradeep N</td><td>2024-06-08</td><td>2024-06-09</td><td>—</td><td><span class="badge badge-orange">Scheduled</span></td></tr>
+            <tr><td><span class="chip">007</span></td><td>Hyd Old Age</td><td>Fresh Milk</td><td>TS01-AJ-1010</td><td>Srikanth M</td><td>2024-06-07</td><td>2024-06-08</td><td>—</td><td><span class="badge badge-blue">Dispatched</span></td></tr>
+            <tr><td><span class="chip">008</span></td><td>Bengaluru Shelter</td><td>Basmati Rice</td><td>TN01-AA-1001</td><td>Murugan K</td><td>2024-06-11</td><td>2024-06-12</td><td>2024-06-12</td><td><span class="badge badge-green">Delivered</span></td></tr>
+            <tr><td><span class="chip">009</span></td><td>Ahmedabad Flood</td><td>Toor Dal</td><td>MH01-AE-5005</td><td>Ramesh P</td><td>2024-06-09</td><td>2024-06-10</td><td>—</td><td><span class="badge badge-orange">Scheduled</span></td></tr>
+            <tr><td><span class="chip">010</span></td><td>Patna Flood</td><td>Wheat Bread</td><td>BR01-AP-1016</td><td>Vikram T</td><td>2024-06-10</td><td>2024-06-11</td><td>2024-06-11</td><td><span class="badge badge-green">Delivered</span></td></tr>
+            <tr><td><span class="chip">011</span></td><td>Chandigarh Refugee</td><td>Fresh Milk</td><td>RJ01-AM-1013</td><td>Vinay S</td><td>2024-06-12</td><td>2024-06-13</td><td>—</td><td><span class="badge badge-orange">Scheduled</span></td></tr>
+            <tr><td><span class="chip">012</span></td><td>Kochi Fishermen</td><td>Rohu Fish</td><td>KL01-AR-1018</td><td>Jose P</td><td>2024-06-11</td><td>2024-06-12</td><td>—</td><td><span class="badge badge-blue">Dispatched</span></td></tr>
+            <tr><td><span class="chip">013</span></td><td>Nagpur Street</td><td>Gulab Jamun</td><td>MH03-AT-2020</td><td>Ajay R</td><td>2024-06-13</td><td>2024-06-14</td><td>—</td><td><span class="badge badge-orange">Scheduled</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-            btn.disabled = true;
-            resultDiv.innerText = "";
-            container.innerHTML = "";
-            
-            const m = s1.length, n = s2.length;
-            const cellCountX = n + 2, cellCountY = m + 2;
-            const cellSize = 52, gap = 6;
-            
-            canvas.width = cellCountX * cellSize + (cellCountX - 1) * gap + 20;
-            canvas.height = cellCountY * cellSize + (cellCountY - 1) * gap + 20;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+  <!-- ─── FOOD ITEMS ─── -->
+  <div id="page-food" class="page">
+    <div class="page-header">
+      <h1>Food Items</h1>
+      <p>Manage food item catalog with nutritional and category data</p>
+    </div>
+    <div class="search-bar">
+      <input type="text" placeholder="Search food items…" oninput="filterTable('foodTbody', this.value)">
+      <button class="btn btn-primary btn-sm" onclick="openModal('addFoodModal')" style="margin-left:auto;">+ Add Item</button>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Item Name</th><th>Category</th><th>Unit</th><th>Nutritional Value</th><th>Producer</th><th>Perishable</th></tr></thead>
+          <tbody id="foodTbody">
+            <tr><td><span class="chip">001</span></td><td>Basmati Rice</td><td><span class="badge badge-muted">Grains</span></td><td>kg</td><td>Carbs 78g, Protein 7g</td><td>Raj Agro Farms</td><td><span class="badge badge-muted">No</span></td></tr>
+            <tr><td><span class="chip">002</span></td><td>Tomatoes</td><td><span class="badge badge-green">Vegetables</span></td><td>kg</td><td>Vitamin C, Lycopene</td><td>Green Valley Farms</td><td><span class="badge badge-orange">Yes</span></td></tr>
+            <tr><td><span class="chip">003</span></td><td>Whole Wheat Flour</td><td><span class="badge badge-muted">Grains</span></td><td>kg</td><td>Carbs 72g, Fiber 10g</td><td>Patel Grains Ltd</td><td><span class="badge badge-muted">No</span></td></tr>
+            <tr><td><span class="chip">004</span></td><td>Fresh Milk</td><td><span class="badge badge-blue">Dairy</span></td><td>litre</td><td>Calcium 120mg, Protein 3g</td><td>KP Dairy Co-op</td><td><span class="badge badge-orange">Yes</span></td></tr>
+            <tr><td><span class="chip">005</span></td><td>Chicken Breast</td><td><span class="badge badge-red">Meat</span></td><td>kg</td><td>Protein 31g, Fat 3g</td><td>Chennai Fish Market</td><td><span class="badge badge-red">Yes</span></td></tr>
+            <tr><td><span class="chip">006</span></td><td>Rohu Fish</td><td><span class="badge badge-red">Seafood</span></td><td>kg</td><td>Protein 17g, Omega-3</td><td>Chennai Fish Market</td><td><span class="badge badge-red">Yes</span></td></tr>
+            <tr><td><span class="chip">007</span></td><td>Toor Dal</td><td><span class="badge badge-orange">Pulses</span></td><td>kg</td><td>Protein 22g, Fiber 7g</td><td>Aashirvaad Pulses</td><td><span class="badge badge-muted">No</span></td></tr>
+            <tr><td><span class="chip">008</span></td><td>Refined Sunflower Oil</td><td><span class="badge badge-muted">Oils</span></td><td>litre</td><td>Fat 100g, Vit E</td><td>Om Edible Oils</td><td><span class="badge badge-muted">No</span></td></tr>
+            <tr><td><span class="chip">009</span></td><td>Whole Wheat Bread</td><td><span class="badge badge-orange">Bakery</span></td><td>piece</td><td>Carbs 49g, Fiber 5g</td><td>Kolkata Bakery House</td><td><span class="badge badge-orange">Yes</span></td></tr>
+            <tr><td><span class="chip">010</span></td><td>Mixed Veg Meal</td><td><span class="badge badge-red">Cooked</span></td><td>piece</td><td>Balanced nutrients</td><td>BK Food Processing</td><td><span class="badge badge-red">Yes</span></td></tr>
+            <tr><td><span class="chip">011</span></td><td>Orange Juice</td><td><span class="badge badge-blue">Beverages</span></td><td>litre</td><td>Vit C 50mg</td><td>BK Food Processing</td><td><span class="badge badge-orange">Yes</span></td></tr>
+            <tr><td><span class="chip">012</span></td><td>Iodized Salt</td><td><span class="badge badge-muted">Spices</span></td><td>kg</td><td>Sodium, Iodine</td><td>Hyderabad Rice Mills</td><td><span class="badge badge-muted">No</span></td></tr>
+            <tr><td><span class="chip">016</span></td><td>Organic Bananas</td><td><span class="badge badge-green">Organic</span></td><td>kg</td><td>Potassium, Vit B6</td><td>Bhubaneswar Organics</td><td><span class="badge badge-orange">Yes</span></td></tr>
+            <tr><td><span class="chip">020</span></td><td>Gulab Jamun</td><td><span class="badge badge-purple">Sweets</span></td><td>piece</td><td>Sugar 45g, Fat 15g</td><td>Pink City Sweets</td><td><span class="badge badge-orange">Yes</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-            container.style.gridTemplateColumns = `repeat(${cellCountX}, ${cellSize}px)`;
-            
-            let dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
-            let cellElements = Array(m + 1).fill().map(() => Array(n + 1).fill(null));
+  <!-- ─── WASTAGE ─── -->
+  <div id="page-wastage" class="page">
+    <div class="page-header">
+      <h1>Wastage Records</h1>
+      <p>Track food loss causes, quantities and estimated cost impact</p>
+    </div>
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div class="card">
+        <div class="card-head"><h3>Wastage by Reason</h3></div>
+        <div class="card-body">
+          <div class="bar-chart">
+            <div class="bar-row"><span class="bar-label">Overstock</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">5 cases</span></div>
+            <div class="bar-row"><span class="bar-label">Expired</span><div class="bar-track"><div class="bar-fill orange" style="width:80%"></div></div><span class="bar-val">8 cases</span></div>
+            <div class="bar-row"><span class="bar-label">Damaged</span><div class="bar-track"><div class="bar-fill blue" style="width:60%"></div></div><span class="bar-val">5 cases</span></div>
+            <div class="bar-row"><span class="bar-label">Contaminated</span><div class="bar-track"><div class="bar-fill red" style="width:30%"></div></div><span class="bar-val">3 cases</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Estimated Cost Loss</h3></div>
+        <div class="card-body">
+          <div style="font-family:var(--head);font-size:32px;font-weight:800;color:var(--danger);">₹76,750</div>
+          <div style="color:var(--muted);font-size:12px;margin-top:4px;">total estimated loss across 20 records</div>
+          <hr class="divider">
+          <div class="bar-chart">
+            <div class="bar-row"><span class="bar-label">Seafood (Fish)</span><div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div><span class="bar-val">₹10,000</span></div>
+            <div class="bar-row"><span class="bar-label">Overstock Flour</span><div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div><span class="bar-val">₹10,000</span></div>
+            <div class="bar-row"><span class="bar-label">Chicken</span><div class="bar-track"><div class="bar-fill orange" style="width:75%"></div></div><span class="bar-val">₹7,500</span></div>
+            <div class="bar-row"><span class="bar-label">Grains</span><div class="bar-track"><div class="bar-fill blue" style="width:60%"></div></div><span class="bar-val">₹6,000</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>All Wastage Records</h3><button class="btn btn-outline btn-sm" onclick="openModal('addWastageModal')">+ Record Wastage</button></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Item</th><th>Warehouse</th><th>Qty Wasted</th><th>Reason</th><th>Date</th><th>Recorded By</th><th>Est. Cost</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip">001</span></td><td>Tomatoes</td><td>Chennai Central</td><td>50 kg</td><td><span class="badge badge-red">Expired</span></td><td>2024-06-08</td><td>Ravi Kumar</td><td>₹2,500</td></tr>
+            <tr><td><span class="chip">002</span></td><td>Gulab Jamun</td><td>Madurai Cold</td><td>30 pcs</td><td><span class="badge badge-orange">Damaged</span></td><td>2024-06-08</td><td>Arjun S</td><td>₹1,500</td></tr>
+            <tr><td><span class="chip">003</span></td><td>Chicken Breast</td><td>Mumbai Metro</td><td>15 kg</td><td><span class="badge badge-purple">Contaminated</span></td><td>2024-06-09</td><td>Priya D</td><td>₹7,500</td></tr>
+            <tr><td><span class="chip">004</span></td><td>Fresh Milk</td><td>Madurai Cold</td><td>20 L</td><td><span class="badge badge-red">Expired</span></td><td>2024-06-09</td><td>Arjun S</td><td>₹1,000</td></tr>
+            <tr><td><span class="chip">005</span></td><td>Mixed Veg Meal</td><td>Delhi Distribution</td><td>25 pcs</td><td><span class="badge badge-blue">Overstock</span></td><td>2024-06-09</td><td>Sanjay G</td><td>₹1,250</td></tr>
+            <tr><td><span class="chip">006</span></td><td>Wheat Bread</td><td>Mumbai Metro</td><td>40 pcs</td><td><span class="badge badge-red">Expired</span></td><td>2024-06-10</td><td>Priya D</td><td>₹2,000</td></tr>
+            <tr><td><span class="chip">007</span></td><td>Orange Juice</td><td>Coimbatore Grain</td><td>100 L</td><td><span class="badge badge-red">Expired</span></td><td>2024-05-16</td><td>Senthil M</td><td>₹5,000</td></tr>
+            <tr><td><span class="chip">008</span></td><td>Organic Bananas</td><td>Hyderabad Grain</td><td>30 kg</td><td><span class="badge badge-orange">Damaged</span></td><td>2024-06-15</td><td>Naresh K</td><td>₹1,500</td></tr>
+            <tr><td><span class="chip">009</span></td><td>Rohu Fish</td><td>Kochi Sea Food</td><td>20 kg</td><td><span class="badge badge-purple">Contaminated</span></td><td>2024-06-08</td><td>Jose A</td><td>₹10,000</td></tr>
+            <tr><td><span class="chip">010</span></td><td>Whole Wheat Flour</td><td>Coimbatore Grain</td><td>200 kg</td><td><span class="badge badge-blue">Overstock</span></td><td>2024-02-20</td><td>Senthil M</td><td>₹10,000</td></tr>
+            <tr><td><span class="chip">011</span></td><td>Potato Chips</td><td>Hyderabad Grain</td><td>50 pcs</td><td><span class="badge badge-red">Expired</span></td><td>2024-07-02</td><td>Naresh K</td><td>₹2,500</td></tr>
+            <tr><td><span class="chip">012</span></td><td>Basmati Rice</td><td>Delhi Distribution</td><td>100 kg</td><td><span class="badge badge-orange">Damaged</span></td><td>2024-06-12</td><td>Sanjay G</td><td>₹5,000</td></tr>
+            <tr><td><span class="chip">017</span></td><td>Toor Dal</td><td>Chennai Central</td><td>120 kg</td><td><span class="badge badge-blue">Overstock</span></td><td>2024-09-02</td><td>Ravi Kumar</td><td>₹6,000</td></tr>
+            <tr><td><span class="chip">018</span></td><td>Iodized Salt</td><td>Delhi Distribution</td><td>50 kg</td><td><span class="badge badge-purple">Contaminated</span></td><td>2024-01-10</td><td>Sanjay G</td><td>₹2,500</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-            // Setup UI Grid
-            for (let i = -1; i <= m; i++) {
-                for (let j = -1; j <= n; j++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    if (i === -1 && j === -1) cell.innerText = "";
-                    else if (i === -1) cell.innerText = j === 0 ? "Ø" : s2[j-1], cell.classList.add('header');
-                    else if (j === -1) cell.innerText = i === 0 ? "Ø" : s1[i-1], cell.classList.add('header');
-                    else {
-                        cell.innerText = "0";
-                        cellElements[i][j] = cell;
-                    }
-                    container.appendChild(cell);
-                }
-            }
+  <!-- ─── QUALITY ─── -->
+  <div id="page-quality" class="page">
+    <div class="page-header">
+      <h1>Quality Checks</h1>
+      <p>Food safety and quality inspection results per inventory batch</p>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Inspection Results</h3><button class="btn btn-primary btn-sm" onclick="openModal('addQualityModal')">+ Add Check</button></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Check#</th><th>Inventory#</th><th>Item</th><th>Inspector</th><th>Date</th><th>Result</th><th>Remarks</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip">001</span></td><td>001</td><td>Basmati Rice</td><td>Dr. Subramanian</td><td>2024-01-11</td><td><span class="badge badge-green">Pass</span></td><td>Grain quality excellent</td></tr>
+            <tr><td><span class="chip">002</span></td><td>002</td><td>Tomatoes</td><td>Anita Krishnan</td><td>2024-06-02</td><td><span class="badge badge-green">Pass</span></td><td>Fresh, no defects</td></tr>
+            <tr><td><span class="chip">003</span></td><td>003</td><td>Whole Wheat Flour</td><td>Raju Mehta</td><td>2024-02-16</td><td><span class="badge badge-green">Pass</span></td><td>Grade A flour</td></tr>
+            <tr><td><span class="chip">004</span></td><td>004</td><td>Fresh Milk</td><td>Seetha Lakshmi</td><td>2024-06-11</td><td><span class="badge badge-green">Pass</span></td><td>Pasteurized OK</td></tr>
+            <tr><td><span class="chip">005</span></td><td>005</td><td>Chicken Breast</td><td>Vinod Kumar</td><td>2024-06-06</td><td><span class="badge badge-red">Fail</span></td><td>Slight discoloration</td></tr>
+            <tr><td><span class="chip">006</span></td><td>006</td><td>Rohu Fish</td><td>Marine Inspector</td><td>2024-06-07</td><td><span class="badge badge-green">Pass</span></td><td>Fresh catch</td></tr>
+            <tr><td><span class="chip">007</span></td><td>007</td><td>Toor Dal</td><td>Pulse Expert</td><td>2024-03-02</td><td><span class="badge badge-green">Pass</span></td><td>No pests found</td></tr>
+            <tr><td><span class="chip">008</span></td><td>008</td><td>Sunflower Oil</td><td>Oil Analyst</td><td>2024-01-21</td><td><span class="badge badge-green">Pass</span></td><td>Acidity within limit</td></tr>
+            <tr><td><span class="chip">009</span></td><td>009</td><td>Wheat Bread</td><td>Bakery QC</td><td>2024-06-08</td><td><span class="badge badge-green">Pass</span></td><td>No mold</td></tr>
+            <tr><td><span class="chip">010</span></td><td>010</td><td>Mixed Veg Meal</td><td>Food Safety Officer</td><td>2024-06-08</td><td><span class="badge badge-green">Pass</span></td><td>Temperature maintained</td></tr>
+            <tr><td><span class="chip">011</span></td><td>011</td><td>Orange Juice</td><td>Juice Lab</td><td>2024-05-02</td><td><span class="badge badge-green">Pass</span></td><td>Vitamin content OK</td></tr>
+            <tr><td><span class="chip">012</span></td><td>012</td><td>Iodized Salt</td><td>Salt Inspector</td><td>2024-01-02</td><td><span class="badge badge-green">Pass</span></td><td>Iodine level OK</td></tr>
+            <tr><td><span class="chip">013</span></td><td>013</td><td>Potato Chips</td><td>Snack QC</td><td>2024-04-02</td><td><span class="badge badge-orange">Pending</span></td><td>Awaiting lab results</td></tr>
+            <tr><td><span class="chip">014</span></td><td>014</td><td>Canned Chickpeas</td><td>Can Inspector</td><td>2024-03-02</td><td><span class="badge badge-green">Pass</span></td><td>Sealed properly</td></tr>
+            <tr><td><span class="chip">015</span></td><td>015</td><td>Frozen Peas</td><td>Frozen Food QC</td><td>2024-05-21</td><td><span class="badge badge-green">Pass</span></td><td>Temperature maintained</td></tr>
+            <tr><td><span class="chip">016</span></td><td>016</td><td>Organic Bananas</td><td>Organic Certifier</td><td>2024-06-02</td><td><span class="badge badge-green">Pass</span></td><td>Certified organic</td></tr>
+            <tr><td><span class="chip">017</span></td><td>017</td><td>Biscuit Pack</td><td>Biscuit QC</td><td>2024-04-11</td><td><span class="badge badge-green">Pass</span></td><td>Moisture within limits</td></tr>
+            <tr><td><span class="chip">018</span></td><td>018</td><td>Infant Formula</td><td>Baby Food Analyst</td><td>2024-03-02</td><td><span class="badge badge-green">Pass</span></td><td>Nutrients verified</td></tr>
+            <tr><td><span class="chip">019</span></td><td>019</td><td>Protein Powder</td><td>Health Suppl. QC</td><td>2024-02-02</td><td><span class="badge badge-green">Pass</span></td><td>Protein verified</td></tr>
+            <tr><td><span class="chip">020</span></td><td>020</td><td>Gulab Jamun</td><td>Sweet Inspector</td><td>2024-06-06</td><td><span class="badge badge-red">Fail</span></td><td>Excess sugar content</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-            const arrowColor = "rgba(56, 189, 248, 0.4)";
+  <!-- ─── NGO & SCHEMES ─── -->
+  <div id="page-ngo" class="page">
+    <div class="page-header">
+      <h1>NGOs & Government Schemes</h1>
+      <p>Partner organizations and active food distribution programs</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h3>Registered NGOs</h3><span class="badge badge-blue">20 partners</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>NGO Name</th><th>Region</th><th>Focus</th><th>Contact</th></tr></thead>
+            <tbody>
+              <tr><td><span class="chip">001</span></td><td>Feeding India Trust</td><td><span class="badge badge-green">Chennai</span></td><td>Hunger relief</td><td>9800001001</td></tr>
+              <tr><td><span class="chip">002</span></td><td>Green Hands NGO</td><td><span class="badge badge-blue">Pune</span></td><td>Food redistribution</td><td>9800001002</td></tr>
+              <tr><td><span class="chip">003</span></td><td>Care & Share</td><td><span class="badge badge-orange">Bengaluru</span></td><td>Child nutrition</td><td>9800001003</td></tr>
+              <tr><td><span class="chip">004</span></td><td>Nourish Tamil Nadu</td><td><span class="badge badge-green">Coimbatore</span></td><td>Rural food security</td><td>9800001004</td></tr>
+              <tr><td><span class="chip">005</span></td><td>Delhi Food Bank</td><td><span class="badge badge-blue">Delhi</span></td><td>Urban hunger relief</td><td>9800001005</td></tr>
+              <tr><td><span class="chip">006</span></td><td>Annadaata Foundation</td><td><span class="badge badge-orange">Hyderabad</span></td><td>Farmers welfare</td><td>9800001006</td></tr>
+              <tr><td><span class="chip">007</span></td><td>Kolkata Hunger Project</td><td><span class="badge badge-purple">Kolkata</span></td><td>Slum feeding</td><td>9800001007</td></tr>
+              <tr><td><span class="chip">008</span></td><td>Ahmedabad Relief Society</td><td><span class="badge badge-muted">Ahmedabad</span></td><td>Disaster food relief</td><td>9800001008</td></tr>
+              <tr><td><span class="chip">020</span></td><td>National Hunger Mission</td><td><span class="badge badge-green">Pan India</span></td><td>Pan India hunger</td><td>9800001020</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Government Schemes</h3><span class="badge badge-green">20 active</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Scheme</th><th>Budget (Cr)</th><th>Ministry</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><span class="chip">001</span></td><td>PM Garib Kalyan Anna Yojana</td><td>₹2,00,000</td><td>Ministry of Food</td><td><span class="badge badge-green">Active</span></td></tr>
+              <tr><td><span class="chip">002</span></td><td>National Food Security Act</td><td>₹5,00,000</td><td>Consumer Affairs</td><td><span class="badge badge-green">Active</span></td></tr>
+              <tr><td><span class="chip">003</span></td><td>Antyodaya Anna Yojana</td><td>₹50,000</td><td>Ministry of Food</td><td><span class="badge badge-green">Active</span></td></tr>
+              <tr><td><span class="chip">004</span></td><td>Mid Day Meal Scheme</td><td>₹80,000</td><td>Ministry of Education</td><td><span class="badge badge-green">Active</span></td></tr>
+              <tr><td><span class="chip">005</span></td><td>Integrated Child Dev. Scheme</td><td>₹1,20,000</td><td>Women & Child</td><td><span class="badge badge-green">Active</span></td></tr>
+              <tr><td><span class="chip">006</span></td><td>Tamil Nadu PDS</td><td>₹25,000</td><td>TN Civil Supplies</td><td><span class="badge badge-green">Active</span></td></tr>
+              <tr><td><span class="chip">007</span></td><td>Maharashtra Food Security</td><td>₹30,000</td><td>MH Food Dept</td><td><span class="badge badge-green">Active</span></td></tr>
+              <tr><td><span class="chip">008</span></td><td>Karnataka Anna Bhagya</td><td>₹20,000</td><td>KA Food Dept</td><td><span class="badge badge-green">Active</span></td></tr>
+              <tr><td><span class="chip">013</span></td><td>UP PDS Reform</td><td>₹35,000</td><td>UP Food Dept</td><td><span class="badge badge-green">Active</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
-            // Build DP Table
-            for (let i = 1; i <= m; i++) {
-                for (let j = 1; j <= n; j++) {
-                    const current = cellElements[i][j];
-                    current.classList.add('active');
-                    await sleep(100);
+  <!-- ─── LOGS ─── -->
+  <div id="page-logs" class="page">
+    <div class="page-header">
+      <h1>System Audit Logs</h1>
+      <p>Complete trail of all user actions for security and compliance</p>
+    </div>
+    <div class="search-bar">
+      <input type="text" placeholder="Filter by user, action, table…" oninput="filterTable('logsTbody', this.value)">
+      <div class="tag-filter">
+        <span class="tag active" onclick="filterBadge('logsTbody','',this)">All</span>
+        <span class="tag" onclick="filterBadge('logsTbody','Success',this)">Success</span>
+        <span class="tag" onclick="filterBadge('logsTbody','Warning',this)">Warning</span>
+        <span class="tag" onclick="filterBadge('logsTbody','Failed',this)">Failed</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Log#</th><th>User</th><th>Action</th><th>Table</th><th>Timestamp</th><th>IP Address</th><th>Status</th></tr></thead>
+          <tbody id="logsTbody">
+            <tr><td><span class="chip">001</span></td><td>admin_ravi</td><td>INSERT</td><td>Inventory</td><td>2024-06-10 08:05:00</td><td>192.168.1.1</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">002</span></td><td>operator_sita</td><td>UPDATE</td><td>Demand_Details</td><td>2024-06-10 09:10:00</td><td>192.168.1.2</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">003</span></td><td>auditor_mohan</td><td>SELECT</td><td>Food_Wastage_Record</td><td>2024-06-09 10:15:00</td><td>192.168.1.3</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">004</span></td><td>ngo_feeding</td><td>INSERT</td><td>Demand_Details</td><td>2024-06-08 11:20:00</td><td>192.168.1.4</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">005</span></td><td>govt_scheme1</td><td>UPDATE</td><td>Government_Scheme</td><td>2024-06-07 12:25:00</td><td>192.168.1.5</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">006</span></td><td>operator_priya</td><td>INSERT</td><td>Quality_Check</td><td>2024-06-10 08:35:00</td><td>192.168.1.6</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">007</span></td><td>admin_ravi</td><td>DELETE</td><td>System_Log</td><td>2024-06-10 08:45:00</td><td>192.168.1.1</td><td><span class="badge badge-orange">Warning</span></td></tr>
+            <tr><td><span class="chip">008</span></td><td>operator_sita</td><td>UPDATE</td><td>Inventory</td><td>2024-06-10 09:50:00</td><td>192.168.1.2</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">009</span></td><td>admin_sankar</td><td>INSERT</td><td>Producer</td><td>2024-06-10 07:55:00</td><td>192.168.1.8</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">010</span></td><td>operator_raj</td><td>UPDATE</td><td>Delivery_Schedule</td><td>2024-06-10 09:20:00</td><td>192.168.1.10</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">011</span></td><td>ngo_feeding</td><td>SELECT</td><td>Beneficiary</td><td>2024-06-08 11:30:00</td><td>192.168.1.4</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">012</span></td><td>ngo_green</td><td>INSERT</td><td>Demand_Details</td><td>2024-06-05 14:05:00</td><td>192.168.1.7</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">013</span></td><td>operator_kumar</td><td>UPDATE</td><td>Transport_Vehicle</td><td>2024-06-10 08:50:00</td><td>192.168.1.13</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">014</span></td><td>auditor_mohan</td><td>SELECT</td><td>Inventory</td><td>2024-06-09 10:25:00</td><td>192.168.1.3</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">015</span></td><td>operator_priya</td><td>UPDATE</td><td>Quality_Check</td><td>2024-06-10 09:00:00</td><td>192.168.1.6</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">016</span></td><td>operator_ramesh</td><td>INSERT</td><td>Food_Wastage_Record</td><td>2024-06-10 10:05:00</td><td>192.168.1.16</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">017</span></td><td>admin_ravi</td><td>UPDATE</td><td>Warehouse</td><td>2024-06-10 08:10:00</td><td>192.168.1.1</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">018</span></td><td>operator_sita</td><td>SELECT</td><td>Delivery_Schedule</td><td>2024-06-10 09:15:00</td><td>192.168.1.2</td><td><span class="badge badge-green">Success</span></td></tr>
+            <tr><td><span class="chip">019</span></td><td>auditor_deepa</td><td>SELECT</td><td>System_Log</td><td>2024-06-06 15:05:00</td><td>192.168.1.9</td><td><span class="badge badge-red">Failed</span></td></tr>
+            <tr><td><span class="chip">020</span></td><td>govt_scheme1</td><td>UPDATE</td><td>Government_Scheme</td><td>2024-06-07 12:30:00</td><td>192.168.1.5</td><td><span class="badge badge-green">Success</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-                    if (s1[i-1] === s2[j-1]) {
-                        dp[i][j] = dp[i-1][j-1] + 1;
-                        drawArrow(current, cellElements[i-1][j-1], "rgba(74, 222, 128, 0.6)");
-                        current.classList.add('match');
-                    } else {
-                        dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
-                        if (dp[i-1][j] >= dp[i][j-1]) drawArrow(current, cellElements[i-1][j], arrowColor);
-                        else drawArrow(current, cellElements[i][j-1], arrowColor);
-                    }
+</div><!-- /main -->
+</div><!-- /appShell -->
 
-                    current.innerText = dp[i][j];
-                    await sleep(50);
-                    current.classList.remove('active');
-                    current.classList.add('visited');
-                }
-            }
+<!-- ═══════════════ MODALS ═══════════════ -->
 
-            // Backtrack Sequence
-            await sleep(600);
-            let res = "";
-            let r = m, c = n;
-            const pathColor = "#f472b6";
-            
-            while (r > 0 && c > 0) {
-                const current = cellElements[r][c];
-                if (s1[r-1] === s2[c-1]) {
-                    current.classList.add('path-highlight');
-                    res = s1[r-1] + res;
-                    drawArrow(current, cellElements[r-1][c-1], pathColor, 4, true);
-                    await sleep(300);
-                    r--; c--;
-                } else {
-                    if (dp[r-1][c] >= dp[r][c-1]) {
-                        drawArrow(current, cellElements[r-1][c], pathColor, 2, true);
-                        r--;
-                    } else {
-                        drawArrow(current, cellElements[r][c-1], pathColor, 2, true);
-                        c--;
-                    }
-                    await sleep(150);
-                }
-            }
+<!-- Add Food Modal -->
+<div class="modal-overlay" id="addFoodModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add Food Item</h3><button class="modal-close" onclick="closeModal('addFoodModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid" style="gap:14px;">
+        <div class="field"><label>Item Name</label><input type="text" placeholder="e.g. Basmati Rice"></div>
+        <div class="field"><label>Category ID</label><input type="number" placeholder="1–20"></div>
+        <div class="field"><label>Unit</label><select><option>kg</option><option>g</option><option>litre</option><option>piece</option><option>dozen</option><option>bag</option></select></div>
+        <div class="field"><label>Producer ID</label><input type="number" placeholder="1–20"></div>
+        <div class="field" style="grid-column:span 2"><label>Nutritional Value</label><input type="text" placeholder="e.g. Protein 20g, Carbs 50g"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('addFoodModal')">Cancel</button><button class="btn btn-primary" onclick="showSuccess('addFoodModal','Food item added to catalog')">Add Item</button></div>
+  </div>
+</div>
 
-            resultDiv.innerText = "LCS: " + (res || "None");
-            btn.disabled = false;
-        }
-    </script>
+<!-- Add Inventory Modal -->
+<div class="modal-overlay" id="addInventoryModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add Inventory Batch</h3><button class="modal-close" onclick="closeModal('addInventoryModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid" style="gap:14px;">
+        <div class="field"><label>Item ID</label><input type="number" placeholder="1–20"></div>
+        <div class="field"><label>Warehouse ID</label><input type="number" placeholder="1–20"></div>
+        <div class="field"><label>Quantity</label><input type="number" placeholder="e.g. 500.00"></div>
+        <div class="field"><label>Batch Number</label><input type="text" placeholder="e.g. BATCH-021"></div>
+        <div class="field"><label>Entry Date</label><input type="date"></div>
+        <div class="field"><label>Expiry Date</label><input type="date"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('addInventoryModal')">Cancel</button><button class="btn btn-primary" onclick="showSuccess('addInventoryModal','Inventory batch added successfully')">Add Batch</button></div>
+  </div>
+</div>
+
+<!-- Add Demand Modal -->
+<div class="modal-overlay" id="addDemandModal">
+  <div class="modal">
+    <div class="modal-head"><h3>New Demand Request</h3><button class="modal-close" onclick="closeModal('addDemandModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid" style="gap:14px;">
+        <div class="field"><label>Beneficiary ID</label><input type="number" placeholder="1–20"></div>
+        <div class="field"><label>Item ID</label><input type="number" placeholder="1–20"></div>
+        <div class="field"><label>Quantity Requested</label><input type="number" placeholder="kg / pcs"></div>
+        <div class="field"><label>Status</label><select><option>Pending</option><option>Approved</option><option>Rejected</option></select></div>
+        <div class="field"><label>Demand Date</label><input type="date"></div>
+        <div class="field"><label>Required By</label><input type="date"></div>
+        <div class="field" style="grid-column:span 2"><label>Remarks</label><input type="text" placeholder="Optional notes"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('addDemandModal')">Cancel</button><button class="btn btn-primary" onclick="showSuccess('addDemandModal','Demand submitted successfully')">Submit</button></div>
+  </div>
+</div>
+
+<!-- Add Wastage Modal -->
+<div class="modal-overlay" id="addWastageModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Record Food Wastage</h3><button class="modal-close" onclick="closeModal('addWastageModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid" style="gap:14px;">
+        <div class="field"><label>Item ID</label><input type="number" placeholder="1–20"></div>
+        <div class="field"><label>Warehouse ID</label><input type="number" placeholder="1–20"></div>
+        <div class="field"><label>Quantity Wasted (kg)</label><input type="number" placeholder="e.g. 25.00"></div>
+        <div class="field"><label>Reason</label><select><option>Expired</option><option>Damaged</option><option>Contaminated</option><option>Overstock</option><option>Other</option></select></div>
+        <div class="field"><label>Wastage Date</label><input type="date"></div>
+        <div class="field"><label>Estimated Cost (₹)</label><input type="number" placeholder="e.g. 5000"></div>
+        <div class="field" style="grid-column:span 2"><label>Recorded By</label><input type="text" placeholder="Inspector name"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('addWastageModal')">Cancel</button><button class="btn btn-danger" onclick="showSuccess('addWastageModal','Wastage record saved')">Record Wastage</button></div>
+  </div>
+</div>
+
+<!-- Add Quality Modal -->
+<div class="modal-overlay" id="addQualityModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add Quality Check</h3><button class="modal-close" onclick="closeModal('addQualityModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid" style="gap:14px;">
+        <div class="field"><label>Inventory ID</label><input type="number" placeholder="1–20"></div>
+        <div class="field"><label>Inspector Name</label><input type="text" placeholder="e.g. Dr. Sharma"></div>
+        <div class="field"><label>Check Date</label><input type="date"></div>
+        <div class="field"><label>Result</label><select><option>Pass</option><option>Fail</option><option>Pending</option></select></div>
+        <div class="field" style="grid-column:span 2"><label>Remarks</label><input type="text" placeholder="Inspection notes"></div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-outline" onclick="closeModal('addQualityModal')">Cancel</button><button class="btn btn-primary" onclick="showSuccess('addQualityModal','Quality check recorded')">Save</button></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:none;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4);font-size:13px;">
+    <span style="color:var(--accent);">✓</span>
+    <span id="toastMsg">Done</span>
+  </div>
+</div>
+
+<script>
+// ─── AUTH ───
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  if (!u || !p) {
+    document.getElementById('loginMsg').innerHTML = '<div class="alert alert-error">⚠ Please fill all fields.</div>';
+    return;
+  }
+  document.getElementById('sidebarUser').textContent = u;
+  document.getElementById('sidebarAvatar').textContent = u.slice(0,2).toUpperCase();
+  document.getElementById('sidebarRole').textContent = document.getElementById('loginRole').value;
+  document.getElementById('loginPage').classList.remove('active');
+  document.getElementById('appShell').style.display = 'flex';
+  document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-IN', {weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  toast('Welcome back, ' + u + '!');
+}
+function doLogout() {
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('loginPage').classList.add('active');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+}
+
+// ─── NAVIGATION ───
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-' + name);
+  if (pg) pg.classList.add('active');
+  const nav = document.getElementById('nav-' + name);
+  if (nav) nav.classList.add('active');
+  const titles = {
+    dashboard: 'Dashboard Overview', inventory: 'Inventory Status',
+    demand: 'Demand Requests', delivery: 'Delivery Tracking',
+    food: 'Food Items', wastage: 'Wastage Records',
+    quality: 'Quality Checks', ngo: 'NGOs & Government Schemes',
+    logs: 'System Audit Logs'
+  };
+  document.getElementById('topbarTitle').textContent = titles[name] || name;
+}
+
+// ─── FILTER ───
+function filterTable(tbodyId, val) {
+  const rows = document.getElementById(tbodyId)?.querySelectorAll('tr') || [];
+  rows.forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(val.toLowerCase()) ? '' : 'none';
+  });
+}
+function filterBadge(tbodyId, keyword, tagEl) {
+  tagEl.closest('.tag-filter').querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+  tagEl.classList.add('active');
+  filterTable(tbodyId, keyword);
+}
+
+// ─── MODAL ───
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('active'); });
+});
+
+function showSuccess(modalId, msg) {
+  closeModal(modalId);
+  toast(msg);
+}
+
+// ─── TOAST ───
+function toast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.style.display = 'block';
+  t.style.animation = 'fadeIn .3s ease';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
+// ─── QUICK DEMAND ───
+function submitQuickDemand() {
+  const b = document.getElementById('qd-bene').value;
+  const i = document.getElementById('qd-item').value;
+  const q = document.getElementById('qd-qty').value;
+  if (!b || !i || !q) {
+    document.getElementById('qd-msg').innerHTML = '<div class="alert alert-error">⚠ Fill Beneficiary ID, Item ID and Quantity.</div>';
+    return;
+  }
+  document.getElementById('qd-msg').innerHTML = '<div class="alert alert-success">✓ Demand submitted — status: Pending</div>';
+  document.getElementById('qd-bene').value = '';
+  document.getElementById('qd-item').value = '';
+  document.getElementById('qd-qty').value = '';
+  toast('Demand request submitted successfully!');
+}
+
+// ─── INIT ───
+document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-IN', {weekday:'short',year:'numeric',month:'short',day:'numeric'});
+</script>
 </body>
 </html>
